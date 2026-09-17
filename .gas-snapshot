@@ -1,0 +1,6 @@
+MyTokenTest:invariant_totalSupplyIsConsistent() (runs: 256, calls: 128000, reverts: 85004)
+MyTokenTest:testFuzz_ApproveAndTransferFrom(uint256,uint256) (runs: 256, μ: 107142, ~: 105420)
+MyTokenTest:testFuzz_TransferConservesTotalSupply(address,uint256) (runs: 256, μ: 78702, ~: 79575)
+MyTokenTest:test_InitialState() (gas: 40311)
+MyTokenTest:test_RevertIf_InsufficientBalance() (gas: 38093)
+MyTokenTest:test_Transfer() (gas: 76808)
