@@ -49,6 +49,120 @@ contract MyTokenTest is Test {
         token.transfer(bob, 1 ether);
     }
 
+        // --- Tests unitaires complementaires (couverture) ---
+    function test_TransferRevertsOnZeroAddress() public {
+        vm.prank(owner);
+        vm.expectRevert(MyToken.ZeroAddress.selector);
+        token.transfer(address(0), 1 ether);
+    }
+
+    function test_Approve() public {
+        vm.prank(owner);
+        token.approve(alice, 500 ether);
+        assertEq(token.allowance(owner, alice), 500 ether);
+    }
+
+    function test_ApproveRevertsOnZeroAddress() public {
+        vm.prank(owner);
+        vm.expectRevert(MyToken.ZeroAddress.selector);
+        token.approve(address(0), 1 ether);
+    }
+
+    function test_TransferFrom() public {
+        vm.prank(owner);
+        token.approve(alice, 500 ether);
+        vm.prank(alice);
+        token.transferFrom(owner, bob, 200 ether);
+        assertEq(token.balanceOf(bob), 200 ether);
+        assertEq(token.allowance(owner, alice), 300 ether);
+    }
+
+    function test_TransferFromInfiniteApproval() public {
+        vm.prank(owner);
+        token.approve(alice, type(uint256).max);
+        vm.prank(alice);
+        token.transferFrom(owner, bob, 100 ether);
+        assertEq(token.allowance(owner, alice), type(uint256).max);
+    }
+
+    function test_TransferFromRevertsIfAllowanceExceeded() public {
+        vm.prank(owner);
+        token.approve(alice, 100 ether);
+        vm.prank(alice);
+        vm.expectRevert(
+            abi.encodeWithSelector(MyToken.InsufficientAllowance.selector, 100 ether, 101 ether)
+        );
+        token.transferFrom(owner, bob, 101 ether);
+    }
+
+    function test_TransferFromRevertsOnZeroAddress() public {
+        vm.prank(owner);
+        token.approve(alice, 100 ether);
+        vm.prank(alice);
+        vm.expectRevert(MyToken.ZeroAddress.selector);
+        token.transferFrom(owner, address(0), 10 ether);
+    }
+
+    function test_MintByOwner() public {
+        vm.prank(owner);
+        token.mint(alice, 1000 ether);
+        assertEq(token.balanceOf(alice), 1000 ether);
+        assertEq(token.totalSupply(), SUPPLY + 1000 ether);
+    }
+
+    function test_MintRevertsForNonOwner() public {
+        vm.prank(alice);
+        vm.expectRevert(MyToken.Unauthorized.selector);
+        token.mint(alice, 1000 ether);
+    }
+
+    function test_MintRevertsOnZeroAmount() public {
+        vm.prank(owner);
+        vm.expectRevert(MyToken.ZeroAmount.selector);
+        token.mint(alice, 0);
+    }
+
+    function test_MintRevertsOnZeroAddress() public {
+        vm.prank(owner);
+        vm.expectRevert(MyToken.ZeroAddress.selector);
+        token.mint(address(0), 1 ether);
+    }
+
+    function test_Burn() public {
+        vm.prank(owner);
+        token.transfer(alice, 100 ether);
+        vm.prank(alice);
+        token.burn(40 ether);
+        assertEq(token.balanceOf(alice), 60 ether);
+        assertEq(token.totalSupply(), SUPPLY - 40 ether);
+    }
+
+    function test_BurnRevertsIfInsufficient() public {
+        vm.prank(alice);
+        vm.expectRevert(
+            abi.encodeWithSelector(MyToken.InsufficientBalance.selector, 0, 1 ether)
+        );
+        token.burn(1 ether);
+    }
+
+    function test_TransferOwnership() public {
+        vm.prank(owner);
+        token.transferOwnership(alice);
+        assertEq(token.owner(), alice);
+    }
+
+    function test_TransferOwnershipRevertsOnZeroAddress() public {
+        vm.prank(owner);
+        vm.expectRevert(MyToken.ZeroAddress.selector);
+        token.transferOwnership(address(0));
+    }
+
+    function test_TransferOwnershipRevertsForNonOwner() public {
+        vm.prank(alice);
+        vm.expectRevert(MyToken.Unauthorized.selector);
+        token.transferOwnership(bob);
+    }
+
     // --- Tests de fuzzing ---
     function testFuzz_TransferConservesTotalSupply(
         address to,
